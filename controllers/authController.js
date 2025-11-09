@@ -3,30 +3,40 @@ const pool = require('../config/database');
 
 const AuthController = {
     login: async (req, res) => {
-        const { username, password } = req.body;
+        const { username, email, password } = req.body;
         
         try {
-            console.log('🔐 Login attempt:', username);
+            console.log('🔐 Login attempt:', username || email);
             
-            if (!username || !password) {
+            // Check if using username or email
+            if ((!username && !email) || !password) {
                 return res.status(400).json({
                     success: false,
-                    error: 'Username and password required'
+                    error: 'Username or email and password are required'
                 });
             }
 
-            // Find user - SIMPLE DIRECT PASSWORD COMPARISON
-            const [users] = await pool.execute(
-                `SELECT user_id, username, email, password_hash, role 
-                 FROM Users WHERE username = ? AND password_hash = ?`,
-                [username, password]  // Direct comparison
-            );
+            let query, queryParams;
+            
+            // Determine if login is by username or email
+            if (username) {
+                query = `SELECT user_id, username, email, password_hash, role 
+                         FROM Users WHERE username = ? AND password_hash = ?`;
+                queryParams = [username, password];
+            } else {
+                query = `SELECT user_id, username, email, password_hash, role 
+                         FROM Users WHERE email = ? AND password_hash = ?`;
+                queryParams = [email, password];
+            }
+
+            // Find user with direct password comparison
+            const [users] = await pool.execute(query, queryParams);
 
             if (users.length === 0) {
-                console.log('❌ Login failed for:', username);
+                console.log('❌ Login failed for:', username || email);
                 return res.status(401).json({
                     success: false,
-                    error: 'Invalid username or password'
+                    error: 'Invalid credentials'
                 });
             }
 

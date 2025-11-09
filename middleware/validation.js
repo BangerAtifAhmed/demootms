@@ -26,14 +26,27 @@ const validateOTRoom = [
     handleValidationErrors
 ];
 
-// Only login validation needed
+// UPDATED: Login validation for username OR email
 const validateLogin = [
-    body('username')
-        .notEmpty()
-        .withMessage('Username is required'),
     body('password')
         .notEmpty()
         .withMessage('Password is required'),
+    // Custom validation - either username OR email is required
+    (req, res, next) => {
+        const { username, email } = req.body;
+        if (!username && !email) {
+            return res.status(400).json({
+                success: false,
+                errors: [{
+                    type: 'field',
+                    msg: 'Either username or email is required',
+                    path: 'username',
+                    location: 'body'
+                }]
+            });
+        }
+        next();
+    },
     handleValidationErrors
 ];
 

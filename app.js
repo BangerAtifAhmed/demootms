@@ -5,6 +5,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const otRoomRoutes = require('./routes/otRooms');
+const userRoutes = require('./routes/users');
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes - Only what's needed for Task 1
 app.use('/api/auth', authRoutes);
 app.use('/api/ot-rooms', otRoomRoutes);
-
+app.use('/api/users', userRoutes);
 // Health check route
 app.get('/api/health', (req, res) => {
     res.json({ 
