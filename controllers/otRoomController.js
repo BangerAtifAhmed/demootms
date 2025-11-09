@@ -216,7 +216,69 @@ const OTController = {
                 error: 'Failed to toggle OT room status' 
             });
         }
-    }
+    },
+    
+    // ✅ TASK 3: Edit existing OT room details
+    updateOTRoom: async (req, res) => {
+        const { room_id } = req.params;
+        const { room_name, is_active } = req.body;
+        
+        try {
+            // Check if room exists
+            const [rooms] = await pool.execute(
+                'SELECT room_id, room_name FROM OT_Rooms WHERE room_id = ?',
+                [room_id]
+            );
+
+            if (rooms.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'OT Room not found'
+                });
+            }
+
+            const currentRoom = rooms[0];
+
+            // Check if new room name conflicts with other rooms (if room_name is being changed)
+            if (room_name && room_name !== currentRoom.room_name) {
+                const [conflictingRooms] = await pool.execute(
+                    'SELECT room_id FROM OT_Rooms WHERE room_name = ? AND room_id != ?',
+                    [room_name, room_id]
+                );
+
+                if (conflictingRooms.length > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Room name already exists'
+                    });
+                }
+            }
+
+            // Use the stored procedure to update room
+            await pool.execute(
+                'CALL AddOrUpdateOTRoom(?, ?, ?)',
+                [room_id, room_name, is_active]
+            );
+
+            // Get updated room
+            const [updatedRoom] = await pool.execute(
+                'SELECT * FROM OT_Rooms WHERE room_id = ?',
+                [room_id]
+            );
+
+            res.json({
+                success: true,
+                message: 'OT Room updated successfully',
+                data: updatedRoom[0]
+            });
+        } catch (error) {
+            console.error('Error updating OT room:', error);
+            res.status(500).json({ 
+                success: false, 
+                error: 'Failed to update OT room' 
+            });
+        }
+    },
 };
 
 module.exports = OTController;

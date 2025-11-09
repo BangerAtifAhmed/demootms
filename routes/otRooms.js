@@ -19,6 +19,9 @@ router.get('/:room_id', OTController.getOTRoomById);
 // POST /api/ot-rooms - Add new OT room (Admin only) - TASK 1
 router.post('/', authorizeRoles('Admin'), validateOTRoom, OTController.addOTRoom);
 
+// PUT /api/ot-rooms/:room_id - Edit OT room details (Admin only) - TASK 3
+router.put('/:room_id', authorizeRoles('Admin'), validateOTRoom, OTController.updateOTRoom);
+
 // PUT /api/ot-rooms/:room_id/toggle - Toggle room status (Admin only)
 router.put('/:room_id/toggle', authorizeRoles('Admin'), OTController.toggleOTRoomStatus);
 
