@@ -6,6 +6,8 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const otRoomRoutes = require('./routes/otRooms');
 const userRoutes = require('./routes/users');
+const operationRoutes = require('./routes/operation');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 
@@ -18,6 +20,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/ot-rooms', otRoomRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/operations', operationRoutes);
+app.use('/api/notifications', notificationRoutes);
+
 // Health check route
 app.get('/api/health', (req, res) => {
     res.json({ 
