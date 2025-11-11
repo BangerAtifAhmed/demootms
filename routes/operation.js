@@ -3,6 +3,9 @@ const router = express.Router();
 const OperationController = require('../controllers/operationController');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
+
+
+router.get('/public/schedule', OperationController.getPublicSchedule)
 // All routes require authentication
 router.use(authenticateToken);
 

@@ -1,5 +1,8 @@
 const pool = require('../config/database');
 
+// Import Socket Service
+const SocketService = require('../services/socketService');
+
 const OTController = {
     // Get all OT rooms
     getAllOTRooms: async (req, res) => {
@@ -43,7 +46,7 @@ const OTController = {
         }
     },
 
-    // ✅ TASK 1: Add new OT room
+    // ✅ TASK 1: Add new OT room WITH REAL-TIME UPDATES
     addOTRoom: async (req, res) => {
         const { room_name, is_active = true } = req.body;
         
@@ -73,10 +76,19 @@ const OTController = {
                 [room_name]
             );
 
+            const roomData = newRoom[0];
+
+            // ✅ REAL-TIME UPDATE: Notify all connected clients
+            if (req.app.get('io')) {
+                const io = req.app.get('io');
+                const socketService = new SocketService(io);
+                socketService.notifyRoomUpdate('added', roomData);
+            }
+
             res.status(201).json({
                 success: true,
                 message: 'OT Room added successfully',
-                data: newRoom[0]
+                data: roomData
             });
         } catch (error) {
             console.error('Error adding OT room:', error);
@@ -87,7 +99,7 @@ const OTController = {
         }
     },
 
-    // ✅ TASK 2: Delete OT room (HARD DELETE)
+    // ✅ TASK 2: Delete OT room WITH REAL-TIME UPDATES
     deleteOTRoom: async (req, res) => {
         const { room_id } = req.params;
         
@@ -127,6 +139,13 @@ const OTController = {
                 'DELETE FROM OT_Rooms WHERE room_id = ?',
                 [room_id]
             );
+
+            // ✅ REAL-TIME UPDATE: Notify all connected clients
+            if (req.app.get('io')) {
+                const io = req.app.get('io');
+                const socketService = new SocketService(io);
+                socketService.notifyRoomUpdate('deleted', room);
+            }
 
             res.json({
                 success: true,
@@ -171,7 +190,7 @@ const OTController = {
         }
     },
 
-    // ✅ NEW: Toggle OT room active status
+    // ✅ NEW: Toggle OT room active status WITH REAL-TIME UPDATES
     toggleOTRoomStatus: async (req, res) => {
         const { room_id } = req.params;
         
@@ -198,16 +217,26 @@ const OTController = {
                 [room_id, room.room_name, newStatus]
             );
 
+            // Get updated room data
+            const [updatedRoom] = await pool.execute(
+                'SELECT * FROM OT_Rooms WHERE room_id = ?',
+                [room_id]
+            );
+
+            const updatedRoomData = updatedRoom[0];
             const action = newStatus ? 'activated' : 'deactivated';
+
+            // ✅ REAL-TIME UPDATE: Notify all connected clients
+            if (req.app.get('io')) {
+                const io = req.app.get('io');
+                const socketService = new SocketService(io);
+                socketService.notifyRoomUpdate('updated', updatedRoomData);
+            }
             
             res.json({
                 success: true,
                 message: `OT Room "${room.room_name}" ${action} successfully`,
-                data: {
-                    room_id: parseInt(room_id),
-                    room_name: room.room_name,
-                    is_active: newStatus
-                }
+                data: updatedRoomData
             });
         } catch (error) {
             console.error('Error toggling OT room status:', error);
@@ -218,7 +247,7 @@ const OTController = {
         }
     },
     
-    // ✅ TASK 3: Edit existing OT room details
+    // ✅ TASK 3: Edit existing OT room details WITH REAL-TIME UPDATES
     updateOTRoom: async (req, res) => {
         const { room_id } = req.params;
         const { room_name, is_active } = req.body;
@@ -266,10 +295,19 @@ const OTController = {
                 [room_id]
             );
 
+            const updatedRoomData = updatedRoom[0];
+
+            // ✅ REAL-TIME UPDATE: Notify all connected clients
+            if (req.app.get('io')) {
+                const io = req.app.get('io');
+                const socketService = new SocketService(io);
+                socketService.notifyRoomUpdate('updated', updatedRoomData);
+            }
+
             res.json({
                 success: true,
                 message: 'OT Room updated successfully',
-                data: updatedRoom[0]
+                data: updatedRoomData
             });
         } catch (error) {
             console.error('Error updating OT room:', error);
